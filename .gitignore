@@ -1,0 +1,19 @@
+# Node modules
+node_modules/
+
+# Token
+token.txt
+
+# Venv
+*-env
+*.env
+
+# Logs
+logs
+*.log
+
+# Data Base
+*.db
+
+# VScode Settings
+.vscode/
