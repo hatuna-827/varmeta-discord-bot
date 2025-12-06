@@ -1,5 +1,6 @@
-const { Client, GatewayIntentBits, EmbedBuilder, ChannelType } = require("discord.js");
-const fs = require("fs");
+const { Client, GatewayIntentBits, ChannelType, EmbedBuilder } = require("discord.js");
+const readline = require("readline");
+require('dotenv').config();
 
 const client = new Client({
   intents: [
@@ -9,58 +10,71 @@ const client = new Client({
   ]
 });
 
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
 client.on("clientReady", async () => {
   console.log(`\nLogged in as ${client.user.tag}`);
 
   console.log("\n===== Bot が参加しているサーバー一覧 =====\n");
-  client.guilds.cache.forEach((guild) => {
+  client.guilds.cache.forEach(async (guild) => {
     console.log(`${guild.name} : ${guild.id}`);
     categories = guild.channels.cache
       .filter(ch => ch.type === ChannelType.GuildCategory)
       .sort((a, b) => a.position - b.position).forEach((categorie) => {
-        console.log(`  ${categorie.name} : ${categorie.id}`);
+        console.log(`  [${categorie.position}]${categorie.name} : ${categorie.id}`);
         categorie.children.cache
           .sort((a, b) => a.position - b.position)
           .forEach((channel) => {
-            // if (channel) {
-              console.log(`    ${channel.position}${channel.name} : ${channel.id}`);
-            // }
+            console.log(`    ${channel.position}${channel.name} : ${channel.id}`);
           });
       });
   });
-
   console.log("\n==========================================\n")
+
+  const user = await client.users.fetch(process.env.HATUNA_ID);
+  user.send("Varmeta-discord-botが起動しました。");
+
+  rl.on("line", async (text) => {
+    const channelId = process.env.VARMETA_CHANNEL_ID;
+    const channel = await client.channels.fetch(channelId);
+    if (!channel) {
+      console.log("チャンネルが見つかりません");
+      return;
+    }
+    channel.send(text)
+      .catch(console.error);
+  });
 });
 
 client.on("messageCreate", (message) => {
   if (message.author.bot) { return; }
+  if (message.channel.id == process.env.VARMETA_CHANNEL_ID) {
+    console.log(`[${message.author.globalName}] ${message.content}`);
+  }
 
-  if (message.content === "こんにちは") {
-    // const embed = new EmbedBuilder()
-    //   .setColor(0x3498db)
-    //   .setTitle("📢 お知らせ")
-    //   .setDescription("これはサンプルの埋め込みメッセージです。")
-    //   .addFields(
-    //     { name: "項目1", value: "値1", inline: true },
-    //     { name: "項目2", value: "値2", inline: true },
-    //     { name: "詳細情報", value: "これは長文の詳細説明です。" }
-    //   )
-    //   .setThumbnail("https://example.com/icon.png")
-    //   .setImage("https://example.com/banner.png")
-    //   .setFooter({ text: "フッターテキスト", iconURL: "https://example.com/footer.png" })
-    //   .setTimestamp();
-    // message.channel.send({ embeds: [embed] });
-
+  if (message.content === "ぬるぽ") {
     // const embed = new EmbedBuilder()
     //   .setTitle("こんにちは")
     //   .setDescription("saluton")
     //   .setColor(0x00ffcc);
     // message.channel.send({ embeds: [embed] });
 
-    message.channel.send("こんにちは！");
+    message.channel.send("ｶﾞｯ!");
   }
 });
 
-const token = fs.readFileSync("token.txt", "utf8").trim();
+client.on("interactionCreate", async (interaction) => {
+  if (!interaction.isCommand()) {
+    return;
+  }
+  if (interaction.commandName === 'ping') {
+    await interaction.reply({ content: 'Pong!', ephemeral: true });
+  }
+});
+
+const token = process.env.DISCORD_TOKEN;
 console.log("Token :", token);
 client.login(token);
